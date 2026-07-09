@@ -15,6 +15,7 @@ import { CommentThread } from "@/components/tickets/comment-thread";
 import { CommentForm } from "@/components/tickets/comment-form";
 import { TicketTimeline } from "@/components/tickets/ticket-timeline";
 import { DeleteTicketButton } from "./delete-ticket-button";
+import { ExportPDFButton } from "@/components/tickets/export-buttons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -54,7 +55,7 @@ export default async function TicketDetailPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="icon" className="size-8">
@@ -73,7 +74,8 @@ export default async function TicketDetailPage({
             {ticket.subject}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportPDFButton ticketId={ticket.id} />
           {canUpdate && (
             <Button asChild variant="outline" size="sm">
               <Link href={`/tickets/${ticket.id}/edit`}>
