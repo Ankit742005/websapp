@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import {
@@ -46,7 +47,8 @@ export function PriorityChart({ data }: PriorityChartProps) {
                 tickLine={false} 
                 tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }} 
                 dy={10}
-                tickFormatter={(val: string) => PRIORITY_META[val as keyof typeof PRIORITY_META]?.label ?? val}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                tickFormatter={(val: any) => PRIORITY_META[val as keyof typeof PRIORITY_META]?.label ?? val}
               />
               <YAxis 
                 axisLine={false} 

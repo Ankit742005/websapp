@@ -54,8 +54,8 @@
 | M2 | Data model & auth (schema, seed, RBAC) | ✅ DONE | schema+migration+seed verified; Auth.js+RBAC+proxy build green |
 | M3 | Core CRUD (tickets, comments, contacts) | ✅ DONE | app shell + auth pages + create/read/update/delete ticket end-to-end |
 | M4 | Dashboard & analytics | ✅ DONE | KPIs + ≥3 charts render from real data |
-| M5 | Data table (search/filter/sort/paginate/export) | 🔜 NEXT | URL-driven table; CSV + PDF download work |
-| M6 | UX polish (⌘K, dark mode, states, a11y) | ⬜ | Command palette + all 5 UI states + keyboard nav |
+| M5 | Data table (search/filter/sort/paginate/export) | ✅ DONE | URL-driven table; CSV + PDF download work |
+| M6 | UX polish (⌘K, dark mode, states, a11y) | 🔜 NEXT | Command palette + all 5 UI states + keyboard nav |
 | M7 | Settings, profile, members/RBAC, audit log | ⬜ | Role changes gated; audit log records mutations |
 | M8 | Testing (Vitest + Playwright) | ⬜ | Unit+integration+E2E green in CI |
 | M9 | Docs & deploy (README/SEO/CI/SUBMISSION) | ⬜ | All docs + SEO assets + CI + SUBMISSION/ present |
