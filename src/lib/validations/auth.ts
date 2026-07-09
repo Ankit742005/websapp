@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 /** Normalize (trim + lowercase) then validate as an email. */
-export const emailSchema = z.preprocess(
-  (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
-  z.email("Enter a valid email address"),
-);
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Enter a valid email address");
 
 // bcrypt only hashes the first 72 bytes, so we cap length there.
 export const passwordSchema = z
