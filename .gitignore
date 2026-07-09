@@ -30,8 +30,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — ignore real secrets, keep the template committed
 .env*
+!.env.example
+
+# prisma / local database
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/*.db
+/prisma/*.db-*
+/src/generated
+
+# tests / e2e artifacts
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
 
 # vercel
 .vercel
