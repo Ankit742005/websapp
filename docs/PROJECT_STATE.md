@@ -56,8 +56,8 @@
 | M4 | Dashboard & analytics | ✅ DONE | KPIs + ≥3 charts render from real data |
 | M5 | Data table (search/filter/sort/paginate/export) | ✅ DONE | URL-driven table; CSV + PDF download work |
 | M6 | UX polish (⌘K, dark mode, states, a11y) | ✅ DONE | Command palette + all 5 UI states + keyboard nav |
-| M7 | Settings, profile, members/RBAC, audit log | 🔜 NEXT | Role changes gated; audit log records mutations |
-| M8 | Testing (Vitest + Playwright) | ⬜ | Unit+integration+E2E green in CI |
+| M7 | Settings, profile, members/RBAC, audit log | ✅ DONE | Role changes gated; audit log records mutations; verified end-to-end |
+| M8 | Testing (Vitest + Playwright) | 🔜 NEXT | Unit+integration+E2E green in CI |
 | M9 | Docs & deploy (README/SEO/CI/SUBMISSION) | ⬜ | All docs + SEO assets + CI + SUBMISSION/ present |
 | M10 | Final QA + self-review ≥95/100 | ⬜ | Line-by-line audit complete; score ≥95 |
 
@@ -274,9 +274,73 @@ Confirmed working end-to-end against real seeded data (not just "renders"):
 
 ### Follow-ups carried into M7+
 
-- [ ] Harden `clientIp()` in `src/lib/rate-limit.ts` — document/accept the "unknown" shared-bucket
-      behavior for environments without a trusted proxy, and/or note the header-spoofing caveat in
-      `docs/architecture.md`'s security section.
-- [ ] No automated tests exist yet for any of M3–M6 (expected — that's M8). This audit was a manual,
-      one-time verification pass; it does not substitute for the Playwright/Vitest suite still to
-      be written.
+- [x] Harden `clientIp()` in `src/lib/rate-limit.ts` — documented the trust boundary (safe on
+      Vercel, spoofable/shared-bucket without a trusted proxy) directly in the function's doc
+      comment; also added rate limiting to `changePasswordAction` (was previously the only
+      secret-verifying action without one).
+- [ ] No automated tests exist yet for any of M3–M7 (expected — that's M8). All manual verification
+      so far (this section and §9 below) is a one-time Playwright-driven pass, not a substitute for
+      the Vitest/Playwright suite still to be written.
+
+---
+
+## 9. M7 — Settings, RBAC admin, audit log, analytics (this session, Claude Code)
+
+Built directly (not handed off), following the same discipline as the M3–M6 audit: every flow was
+driven end-to-end with Playwright against a live dev server before being called done, not just
+typechecked/built. Two false alarms surfaced during that verification and are recorded here so a
+future session doesn't re-chase them (see "Gotchas" below) — both traced back to fixed `waitForTimeout`
+delays in throwaway test scripts racing a cold Turbopack compile or a `revalidatePath`, not real bugs.
+
+### What was missing and is now built
+
+- **`/analytics`** — the sidebar linked here since M3 but the route never existed (404). Built with
+  a 7/30/90-day range selector; the dashboard's analytics DAL functions (`getDashboardKPIs`,
+  `getTicketVolumeSeries`, `getAgentLeaderboard`) were parametrized (`windowDays`, `limit`) rather
+  than duplicated, so Dashboard keeps its fixed 30-day glance and Analytics reuses the same queries.
+- **Settings shell** (`/settings`) — RBAC-gated left sub-nav; items an actor can't reach
+  (Organization/Members/Audit log) are hidden, not just disabled, mirroring what the server actions
+  themselves enforce.
+- **Profile** — update name/avatar; change password (current-password verification, its own rate
+  limit, round-trip-tested: changed a real seeded user's password, logged out, logged back in with
+  the *new* password, then reverted it so the seed stays predictable).
+- **Organization** — rename the workspace, gated to `org:edit` (Owner/Admin).
+- **Members** — add (no email provider, so it surfaces a claim-your-account link the same way
+  registration does — reuses the `PasswordResetToken` table with a longer 7-day TTL), change role,
+  remove. RBAC rules, enforced identically client-side (for UX) and server-side (source of truth):
+  only an Owner may grant Owner/Admin; an actor may otherwise only manage strictly lower-ranked
+  members; an Owner may manage a peer Owner but never themselves; the last remaining Owner can never
+  be demoted or removed. Removal detaches (`orgId: null`) rather than hard-deletes, since `Comment`
+  has `onDelete: Cascade` on its author — deleting a user outright would have silently destroyed
+  their ticket comment history.
+- **Audit log** (`/settings/audit`) — paginated, most-recent-first, filterable by entity type; every
+  new mutation above writes to it (`profile.updated`, `password.changed`, `organization.updated`,
+  `member.invited`, `member.role_changed`, `member.removed` were added to `AUDIT_ACTIONS`).
+- **`/onboarding`** — `requireOrg()` already redirected any signed-in-but-orgless user here (a
+  removed member, or a first-time OAuth sign-in), but the page didn't exist — a latent dead-end
+  that member removal would now actively trigger. Built as a minimal explanation + sign-out; there's
+  no self-serve create-workspace flow, by design (single-org-per-user model for this build).
+
+### Verified end-to-end (Playwright, zero page errors)
+
+Login as Owner → settings nav shows all four sections → profile rename persists → password change
+correctly rejects a wrong current password → organization name loads correctly → members list (6
+seeded) → add member shows the dev-mode invite link → role change → remove (confirmed via a **fresh**
+page reload showing 6 rows again, not just the in-page state) → audit log shows the resulting
+`member.invited`/`member.role_changed`/`member.removed` rows, and entity filter narrows to exactly
+those 3 → analytics page renders 31 chart SVGs and the range selector updates the URL and the
+on-page "(7d)" labels. Separately: full password-change round trip (change → log out → log in with
+the new password → succeeds → revert).
+
+### Gotchas hit while verifying (test-script issues, not app bugs — don't re-chase these)
+
+- A `waitForTimeout(1500)` after clicking Sign in raced a **cold Turbopack compile** of `/login`
+  right after an `rm -rf .next` (observed taking 3.1s on that specific request) and produced a false
+  "login is broken" reading. Fixed by polling (retry `goto('/dashboard')` a few times with short
+  waits) instead of trusting a single fixed delay — the same class of issue as the earlier M3–M6
+  audit's `waitForURL` regex problem, different mechanism.
+- A member-removal check read the table **800ms** after confirming the AlertDialog and saw the
+  stale row count (7, not 6) even though the audit log already showed the removal had executed
+  server-side. A **fresh page navigation** a few seconds later showed the correct 6 rows. Don't
+  trust an in-page count taken immediately after a mutation without allowing for
+  `revalidatePath` + client re-render; reload or wait longer.
