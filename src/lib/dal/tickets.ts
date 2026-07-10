@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 
 /**
  * Ticket list item — the shape returned by `getTickets`. Includes the
@@ -13,6 +14,7 @@ export interface TicketListItem {
   priority: string;
   createdAt: Date;
   updatedAt: Date;
+  resolvedAt: Date | null;
   assignee: { id: string; name: string | null; image: string | null } | null;
   contact: { id: string; name: string; email: string };
   _count: { comments: number };
@@ -35,12 +37,12 @@ export async function getTickets(orgId: string, options?: GetTicketsOptions) {
   const { query, status, priority, assigneeId, sort = "createdAt.desc", page = 1, pageSize = 25 } = options ?? {};
 
   // Build the where clause
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = { orgId, deletedAt: null };
+  const where: Prisma.TicketWhereInput = { orgId, deletedAt: null };
 
   if (query) {
+    // SQLite's `contains` is case-insensitive by default for ASCII text.
     where.OR = [
-      { subject: { contains: query } }, // Note: SQLite is case-insensitive by default for LIKE, but Prisma's `contains` might be case-sensitive in some adapters. We'll use standard `contains`.
+      { subject: { contains: query } },
       { contact: { name: { contains: query } } },
       { contact: { email: { contains: query } } },
     ];
@@ -48,18 +50,21 @@ export async function getTickets(orgId: string, options?: GetTicketsOptions) {
   if (status) where.status = status;
   if (priority) where.priority = priority;
   if (assigneeId) {
-    if (assigneeId === "unassigned") where.assigneeId = null;
-    else where.assigneeId = assigneeId;
+    where.assigneeId = assigneeId === "unassigned" ? null : assigneeId;
   }
 
   // Build the orderBy clause
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orderBy: any = {};
+  const orderBy: Prisma.TicketOrderByWithRelationInput = {};
   const parts = sort.split(".");
   const sortField = parts[0] ?? "createdAt";
-  const sortDir = parts[1] ?? "desc";
-  if (["createdAt", "updatedAt", "priority", "status"].includes(sortField)) {
-    orderBy[sortField] = sortDir === "asc" ? "asc" : "desc";
+  const sortDir: Prisma.SortOrder = parts[1] === "asc" ? "asc" : "desc";
+  if (
+    sortField === "createdAt" ||
+    sortField === "updatedAt" ||
+    sortField === "priority" ||
+    sortField === "status"
+  ) {
+    orderBy[sortField] = sortDir;
   } else {
     orderBy.createdAt = "desc";
   }

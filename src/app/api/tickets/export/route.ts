@@ -4,10 +4,20 @@ import { getTickets } from "@/lib/dal/tickets";
 import { format } from "date-fns";
 import { STATUS_META, PRIORITY_META } from "@/lib/constants/display";
 import type { TicketStatus, TicketPriority } from "@/lib/constants/enums";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
-    const { orgId } = await getTenant();
+    const { user, orgId } = await getTenant();
+
+    const limit = rateLimit(`export-csv:${clientIp(req.headers)}:${user.id}`, 20, 5 * 60 * 1000);
+    if (!limit.ok) {
+      return new Response("Too many export requests. Try again shortly.", {
+        status: 429,
+        headers: { "Retry-After": String(limit.retryAfter) },
+      });
+    }
+
     const searchParams = req.nextUrl.searchParams;
 
     const query = searchParams.get("q") ?? undefined;
@@ -50,7 +60,6 @@ export async function GET(req: NextRequest) {
       t.contact.email,
       t.assignee ? `"${t.assignee.name?.replace(/"/g, '""')}"` : "Unassigned",
       format(t.createdAt, "yyyy-MM-dd HH:mm:ss"),
-      // @ts-expect-error - resolvedAt isn't in the TicketListItem type by default for M3, we can skip it or just add it
       t.resolvedAt ? format(t.resolvedAt, "yyyy-MM-dd HH:mm:ss") : "",
     ]);
 
