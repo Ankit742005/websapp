@@ -59,7 +59,9 @@ function CommandDialog({
         )}
         showCloseButton={showCloseButton}
       >
-        {children}
+        <Command shouldFilter={false} className="**:[[cmdk-group-heading]]:px-2">
+          {children}
+        </Command>
       </DialogContent>
     </Dialog>
   )
