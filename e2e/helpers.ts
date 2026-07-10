@@ -7,9 +7,11 @@ export const DEMO_USERS = {
 } as const;
 
 /**
- * Logs in and confirms the session actually stuck by polling `/dashboard`
- * rather than trusting a single fixed delay — a cold Turbopack compile of a
- * just-visited route can take several seconds and a flat wait races it.
+ * Logs in and waits for the resulting redirect to actually land. Deliberately
+ * does NOT issue a competing `page.goto()` while that redirect is in flight —
+ * doing so aborts the pending response before its Set-Cookie header is ever
+ * applied, which permanently (not just slowly) loses the session. Let the
+ * click's own navigation resolve on its own; `waitForURL` just observes it.
  */
 export async function login(
   page: Page,
@@ -20,10 +22,6 @@ export async function login(
   await page.getByLabel("Password").fill(user.password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  for (let attempt = 0; attempt < 5; attempt++) {
-    await page.waitForTimeout(1000);
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
-    if (page.url().endsWith("/dashboard")) return;
-  }
-  throw new Error(`Login did not stick for ${user.email}, ended at ${page.url()}`);
+  await page.waitForURL((url) => url.pathname === "/dashboard", { timeout: 15_000 });
+  await page.waitForLoadState("networkidle");
 }
