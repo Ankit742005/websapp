@@ -42,7 +42,17 @@ export function rateLimit(
   return { ok: true, remaining: limit - bucket.count, retryAfter: 0 };
 }
 
-/** Best-effort client IP from proxy headers (Vercel sets x-forwarded-for). */
+/**
+ * Best-effort client IP from proxy headers. Trust boundary: this only
+ * protects against abuse when a trusted reverse proxy sets (and cannot be
+ * overridden by the client on) `x-forwarded-for` — true on Vercel, where the
+ * edge sets it and strips any client-supplied value. Self-hosting behind a
+ * proxy that blindly forwards client headers would let an attacker rotate
+ * this value to bypass the limit; harden with a trusted-proxy allowlist
+ * before self-hosting publicly. Requests with neither header (e.g. local
+ * dev, or a direct hit with no proxy) share one "unknown" bucket per
+ * identifier — expected in dev, not reachable on the recommended deployment.
+ */
 export function clientIp(headers: Headers): string {
   return (
     headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

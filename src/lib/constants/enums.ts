@@ -62,6 +62,9 @@ export const AUDIT_ACTIONS = [
   "member.removed",
   "tag.created",
   "tag.deleted",
+  "profile.updated",
+  "password.changed",
+  "organization.updated",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
