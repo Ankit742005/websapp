@@ -55,7 +55,7 @@ main [README.md](../README.md).
 - Role-based access control — 4 roles, enforced server-side on every action
 - Ticket CRUD — comments (internal notes vs. customer replies), full change timeline, soft delete
 - Contact CRUD
-- Server-side data table — debounced search, status/priority filters, column sort, pagination
+- Server-side data table — debounced search, status/priority/assignee filters, column sort, pagination
 - CSV export (filtered) and per-ticket PDF export
 - Dashboard (KPIs + 3 charts + leaderboard) and a dedicated Analytics page with a 7/30/90-day range
 - Settings — profile, organization, member management, paginated/filterable audit log
