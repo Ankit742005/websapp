@@ -65,22 +65,30 @@
 
 ## 4. Current status
 
-- **Active milestone:** M3 → M4
-- **Last action:** completed M3; CRUD and Auth flows verified.
+- **Active milestone:** M6 done, audited, and hardened → M7 next
+- **Last action:** Claude Code audited Antigravity's M3–M6 work by actually running the app
+  end-to-end (Playwright against a live dev server), found and fixed two real crash bugs plus a
+  dropped-devDependencies regression from M1; see §8 for full detail.
 - [x] M0: Project initialization (Next.js, Tailwind v4, linting)
 - [x] M1: Core architecture (Prisma adapter, directory structure)
 - [x] M2: Auth & Tenancy (Auth.js, org-scoped DAL, Seed script)
 - [x] M3: App shell & core CRUD (Tickets, Contacts, Auth pages)
-- [ ] M4: Dashboard & Analytics
-- [ ] M5: Rich Data Tables
-- [ ] M6: UX Polish (Command palette, optimistic UI)
+- [x] M4: Dashboard & Analytics
+- [x] M5: Rich Data Tables (search/filter/sort/paginate/export — all verified server-side & URL-driven)
+- [x] M6: UX Polish (Command palette, dark mode, mobile responsive — all verified working post-fix)
 - [ ] M7: Settings & RBAC (Team management, audit log viewer)
 - [ ] M8: Testing & CI
 - [ ] M9: Docs & Deploy (Landing page, Turso, Vercel)
 
-## Current Status (Last Updated: M3)
+## Current status (Last Updated: post-M6 audit)
 
-We have completed **Milestone 3**. The authenticated app shell is in place with a responsive sidebar and topbar. The full authentication flow (login, register, forgot password, reset password, verify email) is functional using server actions and Zod validation. Core CRUD operations for Tickets and Contacts have been implemented with role-based access control (`can()`) and strict tenant isolation via the DAL. All mutations write to the immutable AuditLog. The test suite (`typecheck`, `lint`, `build`) passes.
+M3–M6 are complete **and independently verified by actually running the application**, not just by
+reading the code or trusting green builds. Two real crash bugs were found and fixed (see §8): a
+Server/Client Component boundary violation that broke every authenticated page load, and a missing
+`<Command>` root that crashed the command palette on the first keystroke. Both are now confirmed
+fixed via a fresh Playwright run with zero console/page errors. `typecheck`, `lint`, and `build` are
+green. The dev/test tooling gap from M1 (vitest/playwright/testing-library/prettier/tsx silently
+missing from `package.json`) has been repaired so M8 can proceed without re-discovering it.
 
 ---
 
@@ -162,3 +170,113 @@ contrast 4.5:1 body, 3:1 large/UI · app shell ≤1280px, prose ≤680px · moti
 
 **Open decision to raise with user:** commit-trailer AI attribution vs. brief's "own every line" — ask
 before finalizing git history.
+
+**Resolved:** user chose no AI co-author trailer (see §9 handoff record). All commits are authored
+solely under the user's git identity, conventional-commit style, atomic per logical unit.
+
+---
+
+## 8. Session handoff to Antigravity + post-handoff audit (this session)
+
+Work was hand-milestoned M0→M2 by Claude Code, then handed to **Google Antigravity** (via
+`docs/HANDOFF_ANTIGRAVITY.md`) to continue M3→M6. Antigravity delivered all four milestones in one
+extended session (25 commits: `c5331ef`…`12933d4`). A follow-up Claude Code session then **audited
+that work end-to-end** — not by reading code, but by actually running the app (Playwright against a
+live dev server, real login, real clicks) — before continuing to M7. Findings below.
+
+### Verdict: M3–M6 substantially correct and functional
+
+Confirmed working end-to-end against real seeded data (not just "renders"):
+
+- Login/session/RBAC — proper `authjs.session-token` cookie, JWT claims, org-scoped access.
+- Dashboard — 4 KPI cards + 3 charts (volume line, status donut, priority bars) + agent leaderboard,
+  all computed from real aggregated ticket data.
+- Tickets — list, **debounced server-side search** (URL-driven `?q=`), **column-header sort**
+  (`?sort=status.asc`, verified order actually changes), **status/priority filter** via native
+  `<select>` (`?status=OPEN`, verified 18/18 returned rows genuinely `OPEN`), **pagination**
+  (`?page=2`, verified genuinely different rows), detail view with timeline, comment posting.
+- CSV export — real file download (`tickets_export.csv`), respects active filters.
+- PDF export — real per-ticket PDF download (`ticket-1062.pdf`).
+- Contacts — list, create (redirects to detail + success toast; confirmed via server log + toast,
+  not just UI inspection).
+- Dark mode — **properly designed**, not inverted: elevated surfaces, desaturated accent, persists
+  via `next-themes`, zero flash.
+- Mobile responsive — no horizontal scroll at 375px; working slide-in sidebar drawer with backdrop.
+- Auth pages — register, forgot-password render and are reachable.
+
+### Bugs found during the audit and fixed
+
+1. **P0 — entire authenticated app crashed on every load.** `src/components/app-shell/topbar.tsx`
+   is a Server Component that inlined a `<Button onClick={...}>` (dispatching a synthetic
+   Cmd/Ctrl+K keydown to open the command palette). Passing an event handler from a Server
+   Component throws `Error: Event handlers cannot be passed to Client Component props.` — this
+   fired on literally every page load post-login. **Fix:** extracted the button into
+   `src/components/app-shell/search-trigger.tsx` (`"use client"`), matching the codebase's existing
+   pattern of small client islands (`SignOutButton`, `ThemeToggle`). `Topbar` stays a Server
+   Component. Verified via Next's own dev error overlay before/after.
+2. **P1 — command palette crashed the instant you typed.** `src/components/ui/command.tsx`'s
+   `CommandDialog` (shadcn-generated) wrapped children in `Dialog`/`DialogContent` but never
+   rendered the `<Command>` (cmdk `CommandPrimitive`) root, so `CommandInput`/`CommandList` had no
+   context/store to read — `TypeError: Cannot read properties of undefined (reading 'subscribe')`
+   on the first keystroke. **Fix:** wrapped `children` in `<Command shouldFilter={false}>` inside
+   `CommandDialog` (`shouldFilter={false}` because `CommandPalette` already does server-side
+   search via `performGlobalSearch`, so cmdk's own client fuzzy-filter must not double-filter).
+   Verified: typing "ticket" now returns real, live, grouped, zero-error results.
+3. **Infra — M1's own test/format tooling had silently gone missing** (root-caused to *this
+   project's own earlier Claude Code session*, not Antigravity): `vitest`, `@playwright/test`,
+   `@testing-library/*`, `jsdom`, `prettier`, `prettier-plugin-tailwindcss`, `tsx`, `dotenv` were
+   present in an `npm install` I ran during M1, but never made it into the committed
+   `package.json`/`package-lock.json` — most likely clobbered by a subsequent `shadcn init`
+   invocation regenerating the manifest. Net effect: on a **fresh clone**, `npm test`,
+   `npm run test:e2e`, and `npm run format` would all fail with "command not found," and
+   `db:seed` only "worked" via `npx`'s ad-hoc temp-install fallback. **Fix:** reinstalled all
+   fourteen packages explicitly, pinning `@vitejs/plugin-react` to the `^4` line (the `latest`/v6
+   resolves to a Babel-8-based chain that conflicts with shadcn's Babel-7 chain — real,
+   reproducible `npm error ERESOLVE`). Removed the now-unneeded `@types/bcryptjs` stub (bcryptjs
+   ships its own types). Typecheck/lint/build reverified green after.
+4. **Cleanup — stale/leftover `any` usage in dashboard charts.** `priority-chart.tsx` and
+   `status-distribution.tsx` had a file-level `/* eslint-disable @typescript-eslint/no-explicit-any */`
+   plus several redundant per-line disables and `as any` casts around Recharts' `Tooltip`/`Legend`/
+   `XAxis` formatter callbacks — almost certainly left over from an earlier draft before the "fix:
+   resolve strict typing issues in Recharts" commit, since ESLint reported them as *unused*
+   directives (i.e., nothing underneath them actually needed the exemption anymore). Replaced with
+   properly typed callbacks using Recharts' own exported `ValueType`/`NameType` types — zero `any`,
+   zero disables, matching the project's hard rule.
+
+### False alarms during the audit (not app bugs — recorded so they aren't rediscovered)
+
+- An early hand-rolled Playwright test used an **unanchored** `waitForURL(/dashboard/)` regex,
+  which matches `/login?callbackUrl=%2Fdashboard` too (the substring "dashboard" appears in the
+  query string) — produced false "login failed" readings.
+- `src/lib/rate-limit.ts`'s `clientIp()` falls back to the literal string `"unknown"` when no
+  `x-forwarded-for`/`x-real-ip` header is present — true for **all** local Playwright/curl traffic.
+  Repeated local test runs against one long-lived dev server collapsed into a single shared
+  `login:unknown:demo@deskly.app` bucket and legitimately tripped the 5-attempts/15-min limit,
+  which looked identical to a broken login until traced. **Not fixed yet** — noted as a real,
+  if minor, hardening item for M7 (see below); it isn't a functional bug for the seeded demo flow,
+  but on any deployment that doesn't guarantee a trusted reverse proxy sets `x-forwarded-for`
+  (or where a client can forge it), it's a soft spot worth a defense-in-depth pass.
+  On Vercel specifically this resolves correctly (`x-forwarded-for` is platform-set and trustworthy).
+- On Windows/Git Bash, `kill $pid` / `pkill -f "next dev"` against a process started with
+  `npm run dev &` **did not** reliably terminate the real underlying `node.exe` — it kept serving
+  on port 3000 under its original PID with all in-memory state (including the rate limiter) intact,
+  making a "fresh restart" look identical to the stale process. Use `netstat -ano | grep :3000` to
+  find the real PID and `taskkill //F //PID <pid>` to actually kill it on this platform.
+- Contact creation appeared to "hang" on `/contacts/new` — it doesn't; `router.push` to the new
+  contact's detail page plus the `sonner` success toast both fire correctly, a screenshot taken
+  ~800ms after submit just caught the transition mid-flight (Next's own "Rendering…" dev indicator
+  was visible in the capture).
+- "Sort" and "filter" controls appeared absent to a first pass of Playwright selectors expecting
+  shadcn `Select`/button components — they're implemented instead as semantic `<Link>` elements
+  (sort headers) and native `<select>` (status/priority filters), which is a legitimate,
+  progressively-enhanced, fully-accessible choice, not a gap. Verified functionally correct once
+  selectors were corrected.
+
+### Follow-ups carried into M7+
+
+- [ ] Harden `clientIp()` in `src/lib/rate-limit.ts` — document/accept the "unknown" shared-bucket
+      behavior for environments without a trusted proxy, and/or note the header-spoofing caveat in
+      `docs/architecture.md`'s security section.
+- [ ] No automated tests exist yet for any of M3–M6 (expected — that's M8). This audit was a manual,
+      one-time verification pass; it does not substitute for the Playwright/Vitest suite still to
+      be written.
