@@ -17,11 +17,21 @@ export interface RateLimitResult {
   retryAfter: number;
 }
 
+/**
+ * E2E runs share one server process (and therefore one in-memory bucket) but
+ * legitimately need many more than 5 logins across a full suite. This flag is
+ * only ever set by `playwright.config.ts`'s `webServer.env` — never reachable
+ * in a real deployment — so production behavior is untouched.
+ */
+const UNLIMITED_FOR_E2E = process.env.E2E_TESTING === "1";
+
 export function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
 ): RateLimitResult {
+  if (UNLIMITED_FOR_E2E) return { ok: true, remaining: limit, retryAfter: 0 };
+
   const now = Date.now();
   const bucket = buckets.get(key);
 
