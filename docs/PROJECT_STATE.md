@@ -57,8 +57,8 @@
 | M5 | Data table (search/filter/sort/paginate/export) | ✅ DONE | URL-driven table; CSV + PDF download work |
 | M6 | UX polish (⌘K, dark mode, states, a11y) | ✅ DONE | Command palette + all 5 UI states + keyboard nav |
 | M7 | Settings, profile, members/RBAC, audit log | ✅ DONE | Role changes gated; audit log records mutations; verified end-to-end |
-| M8 | Testing (Vitest + Playwright) | 🔜 NEXT | Unit+integration+E2E green in CI |
-| M9 | Docs & deploy (README/SEO/CI/SUBMISSION) | ⬜ | All docs + SEO assets + CI + SUBMISSION/ present |
+| M8 | Testing (Vitest + Playwright) | ✅ DONE | 69 unit/integration + 12 E2E tests, all green |
+| M9 | Docs & deploy (README/SEO/CI/SUBMISSION) | 🔜 NEXT | All docs + SEO assets + CI + SUBMISSION/ present |
 | M10 | Final QA + self-review ≥95/100 | ⬜ | Line-by-line audit complete; score ≥95 |
 
 ---
@@ -344,3 +344,75 @@ the new password → succeeds → revert).
   server-side. A **fresh page navigation** a few seconds later showed the correct 6 rows. Don't
   trust an in-page count taken immediately after a mutation without allowing for
   `revalidatePath` + client re-render; reload or wait longer.
+
+---
+
+## 10. M8 — Testing (Vitest + Playwright)
+
+**69 unit/integration tests, 12 E2E tests, all green.** Built for value, not coverage percentage —
+every test either locks down security-critical logic or exercises the flow the brief calls out by
+name ("create -> filter -> export").
+
+### Unit tests (`src/lib/**/*.test.ts`, 51 tests)
+
+RBAC (`permissions.test.ts`) — `can()` per role including the "OWNER gets everything, even
+unlisted actions" case; `outranks()`; `assignableRoles()` never returns anything ranked above the
+actor. Validation boundaries (`auth.test.ts`, `ticket.test.ts`, `member.test.ts`,
+`profile.test.ts`) — exact min/max character boundaries (7 vs 8, 72 vs 73), not just "some valid /
+some invalid" cases; rejecting enum values outside the known set (never trust a role sent from the
+client, even in a test). The rate limiter (`rate-limit.test.ts`) — window reset uses
+`vi.useFakeTimers()` to advance real time deterministically rather than sleeping. Tokens/passwords
+(`tokens.test.ts`, `password.test.ts`) — hash determinism, per-hash salting, and the bcrypt cost-12
+requirement asserted directly against the hash's own `$2b$12$` prefix.
+
+### Integration test (`test/integration/tenant-isolation.test.ts`, 5 tests)
+
+The one property that matters most in a multi-tenant app: org A can never see org B's rows. Real
+Prisma queries against a **disposable SQLite file** with the actual migrations applied via
+`prisma migrate deploy` (not mocks) — two organizations, one ticket each, asserting
+`findFirst({ id: ticketB.id, orgId: orgA.id })` returns `null` (the exact DAL pattern used
+everywhere in the app) and that per-org ticket numbering can collide (both orgs have a "#1") without
+conflict. Cleanup is best-effort (`try/catch`) because Windows can hold a SQLite file handle open
+briefly after `$disconnect()` resolves — a lingering handle must never fail the suite; the next
+run's `beforeAll` clears it anyway.
+
+### E2E (`e2e/*.spec.ts`, Playwright, 12 tests)
+
+`auth.spec.ts` — unauthenticated redirect with callback URL preserved, wrong-password error,
+successful login, sign-out. `tickets.spec.ts` — the brief's named critical path: create a ticket,
+find it via server-side search, export CSV (asserts a real download event and filename, not just a
+click); plus commenting and status-change persistence across a reload. `rbac.spec.ts` — a viewer
+doesn't see "New ticket," the settings sub-nav omits Organization/Members/Audit for a viewer but
+shows all four for an Owner, and — the one that actually matters — a viewer who **navigates straight
+to `/settings/members` by URL** gets the real not-found render, not just a hidden button. A hidden
+control is not a security boundary; this test would have caught it if it were.
+
+### Two real fixes that came out of building this suite (not test-only changes)
+
+1. **`src/lib/rate-limit.ts`** — a full E2E run reuses ~6 seeded accounts across 12 specs, all
+   against one server process's in-memory bucket, and legitimately exceeds the 5-attempts/15-min
+   login limit partway through. Rather than weaken the limit, added an `E2E_TESTING` escape hatch
+   that only `playwright.config.ts`'s `webServer.env` ever sets — structurally unreachable in any
+   real deployment, so production behavior is byte-for-byte unchanged.
+2. **`sidebar.tsx` / `settings-nav.tsx`** — two unlabeled `<nav>` landmarks on the same page
+   (app sidebar + settings sub-nav) were indistinguishable to both assistive tech and a Playwright
+   query trying to scope to one of them. Added `aria-label="Main"` / `aria-label="Settings"` — a
+   real accessibility fix, not a test-only workaround (confirmed the bug first: an early RBAC test
+   assertion was trivially passing against the *wrong* nav element and not actually testing
+   anything, because both navs happened to omit the same strings).
+
+### Gotchas hit while building this suite (test-infra issues, not app bugs)
+
+- `import "server-only"` in `src/lib/auth/password.ts`/`tokens.ts`/`db.ts` isn't a real resolvable
+  npm package — Next.js's bundler special-cases that bare import at build time. Vitest runs outside
+  that bundler and crashes on it. Fixed with a `resolve.alias` in `vitest.config.ts` pointing it at
+  a one-line no-op stub (`test/stubs/server-only.ts`) — the guard still does its real job inside the
+  actual Next.js build; only the test runner needed the alias.
+- `notFound()` called deep inside a Server Component tree does **not** reliably flip the top-level
+  HTTP status to 404 under RSC streaming — Next may have already committed a 200 for the shell
+  before the nested boundary is reached. The rendered not-found UI *is* correct (verified via
+  screenshot) and *is* the real security boundary; asserting `response.status() === 404` was the
+  wrong test. Assert on rendered content for this pattern, not the top-level HTTP status.
+- Same cold-Turbopack-compile-races-a-fixed-`waitForTimeout` issue as the M3–M6 audit (§8), now
+  fixed once, centrally, in `e2e/helpers.ts`'s shared `login()` — poll `/dashboard` a few times
+  with short waits rather than trust one fixed delay after clicking submit.
