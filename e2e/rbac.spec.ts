@@ -40,7 +40,10 @@ test.describe("role-based access — viewer (read-only role)", () => {
   }) => {
     await page.goto("/tickets", { waitUntil: "networkidle" });
     await page.locator("table tbody tr td a").first().click();
-    await expect(page).toHaveURL(/\/tickets\/[a-z0-9]+$/);
+    // A longer timeout than the 5s default — this can be the first hit on
+    // /tickets/[id] in a fresh dev server and a cold Turbopack compile of a
+    // dynamic route can outrun the default assertion window.
+    await page.waitForURL(/\/tickets\/[a-z0-9]+$/, { timeout: 15_000 });
 
     // No status/priority/assignee Select — read-only dots instead.
     await expect(page.locator('[role="combobox"]')).toHaveCount(0);

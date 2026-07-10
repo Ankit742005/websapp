@@ -50,7 +50,9 @@ test.describe("ticket lifecycle", () => {
   test("ticket detail shows the comment thread and accepts a new comment", async ({ page }) => {
     await page.goto("/tickets", { waitUntil: "networkidle" });
     await page.locator("table tbody tr td a").first().click();
-    await expect(page).toHaveURL(/\/tickets\/[a-z0-9]+$/);
+    // A generous timeout — a cold Turbopack compile of a dynamic route can
+    // outrun the 5s default assertion window.
+    await page.waitForURL(/\/tickets\/[a-z0-9]+$/, { timeout: 15_000 });
 
     const commentBody = `E2E comment ${Date.now()}`;
     await page.locator("textarea").first().fill(commentBody);
@@ -62,7 +64,9 @@ test.describe("ticket lifecycle", () => {
   test("changing status and priority persists after a reload", async ({ page }) => {
     await page.goto("/tickets", { waitUntil: "networkidle" });
     await page.locator("table tbody tr td a").first().click();
-    await expect(page).toHaveURL(/\/tickets\/[a-z0-9]+$/);
+    // A generous timeout — a cold Turbopack compile of a dynamic route can
+    // outrun the 5s default assertion window.
+    await page.waitForURL(/\/tickets\/[a-z0-9]+$/, { timeout: 15_000 });
 
     const url = page.url();
     const statusTrigger = page.locator('[role="combobox"]').first();
