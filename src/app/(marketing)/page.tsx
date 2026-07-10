@@ -127,6 +127,7 @@ export default async function LandingPage() {
             width={2400}
             height={1500}
             priority
+            sizes="(max-width: 1024px) 100vw, 1024px"
             className="w-full"
           />
         </div>
@@ -183,6 +184,7 @@ export default async function LandingPage() {
               alt="Deskly ticket list with search, status and priority filters, and pagination"
               width={2400}
               height={1500}
+              sizes="(max-width: 1024px) 100vw, 512px"
               className="w-full"
             />
           </div>
