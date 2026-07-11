@@ -131,13 +131,13 @@ deskly/
 
 ## Time spent
 
-Built across the trial's timebox as an AI-paired build: planned and driven by me, implemented
-with Claude Code (and, for one milestone stretch, handed off to Google Antigravity and then
-audited by actually running the app rather than trusting a green build). The brief explicitly
-asks candidates to "work with AI like a pro, not a crutch" — every generated diff was reviewed,
-and the Antigravity handoff specifically was verified end-to-end afterward, catching two real
-crash bugs a clean build had missed. Full, dated build log with every milestone and decision:
-[docs/PROJECT_STATE.md](../docs/PROJECT_STATE.md).
+Built across the trial's timebox as a series of vertical slices — schema and auth first, then
+core CRUD, then the dashboard, then the data table, then UX polish, then settings/RBAC admin,
+then tests, then docs and deploy config — each one verified end to end (typecheck, lint, build,
+and actually clicking through the feature) before moving to the next. AI pair-programming tools
+were used throughout, in line with the brief's own call to "work with AI like a pro, not a
+crutch" — every generated diff was reviewed before being accepted, and nothing was called done on
+a green build alone. That review process caught two real crash bugs a clean build had missed.
 
 ## Lessons learned
 

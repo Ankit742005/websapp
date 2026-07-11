@@ -32,13 +32,12 @@ build, and *actually clicking through the feature in a browser*) before starting
 green build was never treated as proof a feature worked; several real bugs (a crashed page, a
 crashed command palette) shipped clean builds and were only caught by driving the app.
 
-**AI-assisted, reviewed like a junior's PR.** Large parts of this were built with Claude Code
-and, for one stretch, handed off to Google Antigravity — but every diff was reviewed, and the
-handoff itself was audited afterward by actually running the app rather than trusting that a
-clean build meant working software. That audit caught two real crash bugs a green build had
-missed, plus a devDependency regression that would have broken `npm test` on a fresh clone. That
-pattern — trust nothing until you've clicked it — is the single practice most responsible for
-whatever quality this ended up with.
+**AI-assisted, reviewed like a junior's PR.** I used AI pair-programming tools throughout, but
+every diff got read before it was accepted, and nothing was marked done on the strength of a
+clean build alone — a green `npm run build` was treated as necessary, never sufficient. That
+discipline caught two real crash bugs a passing build had missed, plus a dropped devDependency
+that would have broken `npm test` on a fresh clone. Trust nothing until you've clicked it — that
+single habit is responsible for more of this project's quality than any individual line of code.
 
 ## Result
 

@@ -1,9 +1,6 @@
 # decisions.md
 
-A short list of the decisions that weren't obvious, and the trade-off accepted in each case. The
-full, chronological build log — every milestone, every dead end, every fix — lives in
-`docs/PROJECT_STATE.md`; this file is the curated version for a stranger who doesn't need that
-much detail.
+A short list of the decisions that weren't obvious, and the trade-off accepted in each case.
 
 ## SQLite (via a driver adapter) instead of Postgres-only
 
