@@ -3,6 +3,10 @@
 Digital Heroes Full Stack Developer Trial submission. This file is the single entry point for
 reviewing this project; everything else in the repo is linked from here.
 
+> **Candidate:** still need to deploy, record the demo video, or submit? →
+> [**HOW_TO_SUBMIT.md**](HOW_TO_SUBMIT.md) is the step-by-step checklist, including the exact
+> spoken script for the demo video.
+
 ## Links
 
 | | |
