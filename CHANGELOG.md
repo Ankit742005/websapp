@@ -51,4 +51,4 @@ All notable changes to this project are documented here. Format follows
   submitting the login form, which raced (and could permanently cancel) the in-flight redirect
   carrying the session cookie. Replaced with `waitForURL`.
 
-[1.0.0]: https://github.com/soulrahulrk/deskly/releases/tag/v1.0.0
+[1.0.0]: https://github.com/Ankit742005/websapp/releases/tag/v1.0.0

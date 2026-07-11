@@ -30,7 +30,7 @@ export default function FaqPage() {
       <p className="mt-3 text-muted-foreground">
         Can&apos;t find what you&apos;re after? Open an issue on{" "}
         <a
-          href="https://github.com/soulrahulrk/deskly/issues"
+          href="https://github.com/Ankit742005/websapp/issues"
           className="text-primary underline underline-offset-2"
           target="_blank"
           rel="noopener noreferrer"

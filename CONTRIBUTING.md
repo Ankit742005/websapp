@@ -9,7 +9,7 @@ duplicate effort.
 Follow the [Quick Start](README.md#quick-start) in the README. In short:
 
 ```bash
-git clone https://github.com/soulrahulrk/deskly.git
+git clone https://github.com/Ankit742005/websapp.git
 cd deskly
 cp .env.example .env && npx auth secret   # paste the output into AUTH_SECRET
 npm install

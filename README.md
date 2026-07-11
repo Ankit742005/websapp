@@ -4,7 +4,7 @@
 
 ![Deskly dashboard](docs/screenshots/dashboard.png)
 
-[![CI](https://github.com/soulrahulrk/deskly/actions/workflows/ci.yml/badge.svg)](https://github.com/soulrahulrk/deskly/actions/workflows/ci.yml)
+[![CI](https://github.com/Ankit742005/websapp/actions/workflows/ci.yml/badge.svg)](https://github.com/Ankit742005/websapp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Live demo →** _add your deployed URL here after deploying (see [docs/deployment.md](docs/deployment.md))_
@@ -29,8 +29,8 @@ Next.js 16 (App Router) · TypeScript (strict) · Tailwind CSS v4 · shadcn/ui �
 ## Quick Start
 
 ```bash
-git clone https://github.com/soulrahulrk/deskly.git
-cd deskly
+git clone https://github.com/Ankit742005/websapp.git
+cd websapp
 cp .env.example .env      # then run: npx auth secret — paste the output into AUTH_SECRET
 npm install
 npm run db:migrate && npm run db:seed

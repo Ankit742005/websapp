@@ -15,7 +15,10 @@ again). The task: design, build, ship, and open-source one real full-stack produ
 a **top-1%-candidate** bar. Evaluation is weighted — see §5 below — and the target is
 **≥95/100** on the self-review rubric in `docs/PROJECT_STATE.md §7`.
 
-**Repo:** `https://github.com/soulrahulrk/deskly` (public, pushed, `main` branch, clean).
+**Repo:** `https://github.com/Ankit742005/websapp` (public, `main` branch). This note is a
+historical record from an earlier handoff to Antigravity mid-build — see `docs/PROJECT_STATE.md`
+for the current, authoritative status; the repo identity/URL below was correct at the time this
+file was written but has since moved.
 **Local path:** `C:\Users\rahul\Documents\code\python\ankit\New folder\deskly`
 
 ## 1. Status right now (verified, not aspirational)

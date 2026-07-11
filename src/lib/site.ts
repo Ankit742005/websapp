@@ -21,7 +21,7 @@ export const siteConfig = {
   ],
   author: "Deskly",
   links: {
-    github: "https://github.com/your-username/deskly",
+    github: "https://github.com/Ankit742005/websapp",
   },
 } as const;
 

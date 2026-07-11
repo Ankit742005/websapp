@@ -3,8 +3,8 @@
 ## Local development
 
 ```bash
-git clone https://github.com/soulrahulrk/deskly.git
-cd deskly
+git clone https://github.com/Ankit742005/websapp.git
+cd websapp
 cp .env.example .env
 npx auth secret            # paste the output into AUTH_SECRET in .env
 npm install                 # postinstall runs `prisma generate` automatically

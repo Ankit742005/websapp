@@ -8,7 +8,7 @@ reviewing this project; everything else in the repo is linked from here.
 | | |
 | --- | --- |
 | **Live deployment** | _add your deployed URL here after following [docs/deployment.md](../docs/deployment.md)_ |
-| **GitHub repository** | https://github.com/soulrahulrk/deskly |
+| **GitHub repository** | https://github.com/Ankit742005/websapp |
 | **Demo video** | _add your Loom link here after recording — script at [docs/demo-script.md](../docs/demo-script.md)_ |
 
 ## Before you submit — repository polish
