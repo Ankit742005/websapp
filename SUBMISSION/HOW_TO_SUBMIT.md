@@ -98,13 +98,16 @@ your own computer, in the project folder:
 # Windows PowerShell — replace the two values with your real Turso URL and token
 $env:DATABASE_URL="libsql://deskly-yourname.turso.io"
 $env:DATABASE_AUTH_TOKEN="your-turso-token"
-npm run db:deploy
+npm run db:deploy:turso
 npm run db:seed
 ```
 
-`db:deploy` creates all the tables; `db:seed` adds the demo accounts (`demo@deskly.app`,
-`owner@deskly.app`, `viewer@deskly.app`, all with password `demo1234`) so reviewers can log in
-immediately without registering.
+**Use `db:deploy:turso`, not `db:deploy`.** Prisma's own migration command can't connect to a
+remote Turso URL at all (a real limitation of Prisma's engine, not a mistake you can make) —
+`db:deploy:turso` is a small script in this repo that applies the same migrations a different,
+working way. `db:deploy:turso` creates all the tables; `db:seed` adds the demo accounts
+(`demo@deskly.app`, `owner@deskly.app`, `viewer@deskly.app`, all with password `demo1234`) so
+reviewers can log in immediately without registering.
 
 - [ ] Both commands finished without a red error.
 

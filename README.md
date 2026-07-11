@@ -7,7 +7,7 @@
 [![CI](https://github.com/Ankit742005/websapp/actions/workflows/ci.yml/badge.svg)](https://github.com/Ankit742005/websapp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Live demo →** _add your deployed URL here after deploying (see [docs/deployment.md](docs/deployment.md))_
+**Live demo →** [websapp-beta.vercel.app](https://websapp-beta.vercel.app)
 
 Built for the Digital Heroes Full Stack Developer Trial.
 

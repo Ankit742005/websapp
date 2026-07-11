@@ -50,9 +50,20 @@ database once (from your machine, with the production `DATABASE_URL`/`DATABASE_A
 exported):
 
 ```bash
-npm run db:deploy    # prisma migrate deploy — applies committed migrations, no prompts
-npm run db:seed       # optional — only if you want the same demo data in production
+npm run db:deploy:turso   # applies committed migrations to a remote libSQL/Turso database
+npm run db:seed            # optional — only if you want the same demo data in production
 ```
+
+**Use `db:deploy:turso`, not `db:deploy`, for a remote database.** `prisma migrate deploy`
+(`db:deploy`) only works against a local `file:` database or a database Prisma's own migration
+engine natively understands (Postgres, MySQL, etc.) — it cannot connect to a `libsql://` URL at
+all and fails with `P1013: The provided database string is invalid... scheme is not recognized`.
+This is a real limitation of Prisma's migration engine, not a misconfiguration: libSQL's remote
+protocol is HTTP-based, which the engine doesn't speak, even though the *runtime* driver adapter
+(`@prisma/adapter-libsql`, used everywhere else in this app) handles it fine. `db:deploy:turso`
+(`prisma/apply-remote-migrations.ts`) works around this by applying each migration's SQL directly
+over that same libSQL connection, and records it in `_prisma_migrations` so the history stays
+legible for anyone inspecting the database directly. It's idempotent — safe to re-run; already-applied migrations are skipped.
 
 ### Database: Postgres (alternative)
 
@@ -75,7 +86,8 @@ domain model.
 
 - [ ] The live URL loads with **zero console errors** and no broken images
 - [ ] Sign up (or the seeded demo login) works end to end on the deployed URL, not just localhost
-- [ ] `npm run db:deploy` has run against the production database — migrations are applied
+- [ ] `npm run db:deploy:turso` (or `db:deploy` for Postgres) has run against the production
+      database — migrations are applied
 - [ ] No secret appears in the client bundle (only `NEXT_PUBLIC_*` variables legitimately can —
       check the Network tab on a fresh load)
 - [ ] Pasting the URL into Slack/Twitter/LinkedIn renders the custom OG card, not a blank grey box
